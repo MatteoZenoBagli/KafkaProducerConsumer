@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Kafka consumer</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+
+            h1 {
+                color: #333;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+
+            th,
+            td {
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: left;
+            }
+
+            th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+
+            #messageCount {
+                font-weight: bold;
+                margin-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Received messages from Kafka</h1>
+
+        <div id="messageCount">Received messages: 0</div>
+
+        <table id="messagesTable">
+            <thead>
+                <tr>
+                    <th>Message</th>
+                    <th>Timestamp</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="messagesBody">
+                <!-- Messages will be inserted here -->
+            </tbody>
+        </table>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            const socket = io();
+            let messageCount = 0;
+
+            function addMessageToTable(message) {
+                messageCount++;
+                document.getElementById(
+                    'messageCount'
+                ).textContent = `Received messages: ${messageCount}`;
+
+                const tableBody = document.getElementById('messagesBody');
+                const row = document.createElement('tr');
+
+                // Unix timestamp to readable date
+                const date = new Date(message.timestamp * 1000);
+                const formattedDate = date.toLocaleString();
+
+                row.innerHTML = `
+                    <td>${message.text}</td>
+                    <td>${message.timestamp}</td>
+                    <td>${formattedDate}</td>
+                `;
+
+                tableBody.insertBefore(row, tableBody.firstChild);
+            }
+
+            socket.on('kafka-message', (message) => {
+                console.log('New messaged received:', message);
+                addMessageToTable(message);
+            });
+
+            socket.on('connect_error', (error) => {
+                console.error('Connection error:', error);
+            });
+
+            socket.on('connect', () => {
+                console.log('Connected to server WebSocket');
+            });
+        </script>
+    </body>
+</html>
